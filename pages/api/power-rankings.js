@@ -1,73 +1,88 @@
-// pages/api/power-rankings.js
-import { Pool } from 'pg';
-
-// PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-// Helper function for normal distribution CDF
-function normalCDF(x, mean = 0, stdDev = 1) {
-  const z = (x - mean) / stdDev;
-  const t = 1 / (1 + 0.2316419 * Math.abs(z));
-  const d = 0.3989423 * Math.exp(-z * z / 2);
-  let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-  if (z > 0) prob = 1 - prob;
-  return prob;
-}
+import { Client } from 'pg';
 
 export default async function handler(req, res) {
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+
   try {
-    // Get season from query parameter, default to 2025
-    const season = parseInt(req.query.season) || 2025;
-    
-    console.log(`Fetching power rankings for ${season} season`);
-    
-    // Get power rankings with team data
+    await client.connect();
+    console.log('✅ Database connected successfully');
+
+    // Get year parameter (default to 2025)
+    const year = req.query.year || 2025;
+
+    // Query to get power rankings with team info
     const query = `
-      SELECT DISTINCT ON (LOWER(TRIM(pr.team_name)))
+      SELECT DISTINCT ON (pr.team_name)
         pr.team_name,
         pr.power_rating,
-        pr.offense_rating,
+        pr.offense_rating, 
         pr.defense_rating,
         pr.strength_of_schedule,
+        pr.power_percentile,
+        pr.offense_percentile,
+        pr.defense_percentile,
+        pr.sos_percentile,
         t.school,
         t.mascot,
         t.conference,
         t.classification,
+        t.logo_url,
         t.color,
         t.alt_color,
-        t.logo_url
+        ROW_NUMBER() OVER (ORDER BY pr.power_rating DESC) as rank
       FROM team_power_ratings pr
       LEFT JOIN teams t ON LOWER(TRIM(pr.team_name)) = LOWER(TRIM(t.school))
-      WHERE pr.season = $1
-      ORDER BY LOWER(TRIM(pr.team_name)), pr.power_rating DESC
+      WHERE pr.power_rating IS NOT NULL
+      ORDER BY pr.team_name, pr.power_rating DESC;
     `;
-    
-    const result = await pool.query(query, [season]);
-    
-    // Add rankings and percentiles
-    const rankedTeams = result.rows
-      .sort((a, b) => b.power_rating - a.power_rating)
-      .map((team, index) => ({
-        ...team,
-        rank: index + 1,
-        power_percentile: Math.round(((result.rows.length - index) / result.rows.length) * 100),
-        offense_percentile: calculatePercentile(team.offense_rating, result.rows.map(t => t.offense_rating)),
-        defense_percentile: calculatePercentile(team.defense_rating, result.rows.map(t => t.defense_rating)),
-        sos_percentile: calculatePercentile(team.strength_of_schedule, result.rows.map(t => t.strength_of_schedule))
-      }));
 
-    res.status(200).json(rankedTeams);
-  } catch (err) {
-    console.error('Error fetching power rankings:', err);
-    res.status(500).json({ error: 'Internal server error', details: err.message });
+    console.log(`🔍 Executing query for year: ${year}`);
+    const result = await client.query(query);
+    
+    console.log(`📊 Query returned ${result.rows.length} teams`);
+
+    // Process and format the data
+    const teams = result.rows.map((team, index) => ({
+      rank: index + 1,
+      team_name: team.team_name,
+      school: team.school || team.team_name,
+      mascot: team.mascot,
+      conference: team.conference || 'Independent',
+      classification: team.classification,
+      logo_url: team.logo_url || `https://a.espncdn.com/i/teamlogos/ncaa/500/default.png`,
+      color: team.color,
+      alt_color: team.alt_color,
+      power_rating: parseFloat(team.power_rating) || 0,
+      offense_rating: parseFloat(team.offense_rating) || 0,
+      defense_rating: parseFloat(team.defense_rating) || 0,
+      strength_of_schedule: parseFloat(team.strength_of_schedule) || 0,
+      power_percentile: parseFloat(team.power_percentile) || 50,
+      offense_percentile: parseFloat(team.offense_percentile) || 50,
+      defense_percentile: parseFloat(team.defense_percentile) || 50,
+      sos_percentile: parseFloat(team.sos_percentile) || 50
+    }));
+
+    console.log(`✅ Processed ${teams.length} teams successfully`);
+    console.log(`📋 Sample team:`, teams[0]);
+
+    res.status(200).json(teams);
+
+  } catch (error) {
+    console.error('❌ Database error:', error);
+    res.status(500).json({ 
+      error: 'Database connection failed', 
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  } finally {
+    await client.end();
   }
-}
-
-function calculatePercentile(value, allValues) {
-  const sorted = allValues.filter(v => v !== null).sort((a, b) => a - b);
-  const rank = sorted.findIndex(v => v >= value) + 1;
-  return Math.round((rank / sorted.length) * 100);
 }

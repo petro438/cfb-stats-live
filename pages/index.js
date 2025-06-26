@@ -1,6 +1,4 @@
-// pages/index.js
 import { useState, useEffect } from 'react';
-// Remove the CSS import - it's now in _app.js
 
 export default function Home() {
   const [teams, setTeams] = useState([]);
@@ -49,8 +47,8 @@ export default function Home() {
     return '#ea4335';
   };
 
-  if (loading) return <div style={{padding: '20px'}}>Loading...</div>;
-  if (error) return <div style={{padding: '20px'}}>Error: {error}</div>;
+  if (loading) return <div style={{padding: '20px', fontFamily: 'Trebuchet MS'}}>Loading...</div>;
+  if (error) return <div style={{padding: '20px', fontFamily: 'Trebuchet MS'}}>Error: {error}</div>;
 
   return (
     <div style={{ 
@@ -75,13 +73,13 @@ export default function Home() {
         }}>
           <thead>
             <tr style={{ backgroundColor: '#f8f9fa' }}>
-              <th style={headerStyle}>RK</th>
-              <th style={headerStyle}>TEAM</th>
-              <th style={headerStyle}>CONF</th>
-              <th style={headerStyle}>PWR</th>
-              <th style={headerStyle}>OFF</th>
-              <th style={headerStyle}>DEF</th>
-              <th style={headerStyle}>SOS</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>RK</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>TEAM</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>CONF</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>PWR</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>OFF</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>DEF</th>
+              <th style={{padding: '8px', textAlign: 'left', borderBottom: '1px solid #dee2e6', fontFamily: 'Trebuchet MS', fontSize: '12px', fontWeight: 'bold'}}>SOS</th>
             </tr>
           </thead>
           <tbody>
@@ -89,8 +87,8 @@ export default function Home() {
               <tr key={team.team_name} style={{
                 backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa'
               }}>
-                <td style={cellStyle}>{team.rank}</td>
-                <td style={{...cellStyle, fontWeight: 'bold'}}>
+                <td style={{padding: '8px', borderBottom: '1px solid #dee2e6'}}>{team.rank}</td>
+                <td style={{padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold'}}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {team.logo_url && (
                       <img 
@@ -99,33 +97,37 @@ export default function Home() {
                         style={{ width: '20px', height: '20px' }}
                       />
                     )}
-                    {team.school?.toUpperCase() || team.team_name?.toUpperCase()}
+                    {(team.school || team.team_name)?.toUpperCase()}
                   </div>
                 </td>
-                <td style={cellStyle}>{team.conference}</td>
+                <td style={{padding: '8px', borderBottom: '1px solid #dee2e6'}}>{team.conference}</td>
                 <td style={{
-                  ...cellStyle,
+                  padding: '8px', 
+                  borderBottom: '1px solid #dee2e6',
                   backgroundColor: getPercentileColor(team.power_percentile),
                   fontFamily: 'Consolas, monospace'
                 }}>
                   {team.power_rating ? parseFloat(team.power_rating).toFixed(1) : 'N/A'}
                 </td>
                 <td style={{
-                  ...cellStyle,
+                  padding: '8px', 
+                  borderBottom: '1px solid #dee2e6',
                   backgroundColor: getPercentileColor(team.offense_percentile),
                   fontFamily: 'Consolas, monospace'
                 }}>
                   {team.offense_rating ? parseFloat(team.offense_rating).toFixed(1) : 'N/A'}
                 </td>
                 <td style={{
-                  ...cellStyle,
+                  padding: '8px', 
+                  borderBottom: '1px solid #dee2e6',
                   backgroundColor: getPercentileColor(team.defense_percentile),
                   fontFamily: 'Consolas, monospace'
                 }}>
                   {team.defense_rating ? parseFloat(team.defense_rating).toFixed(1) : 'N/A'}
                 </td>
                 <td style={{
-                  ...cellStyle,
+                  padding: '8px', 
+                  borderBottom: '1px solid #dee2e6',
                   backgroundColor: getPercentileColor(team.sos_percentile),
                   fontFamily: 'Consolas, monospace'
                 }}>
@@ -139,18 +141,3 @@ export default function Home() {
     </div>
   );
 }
-
-const headerStyle = {
-  padding: '8px',
-  textAlign: 'left',
-  borderBottom: '1px solid #dee2e6',
-  fontFamily: 'Trebuchet MS, sans-serif',
-  fontSize: '12px',
-  fontWeight: 'bold'
-};
-
-const cellStyle = {
-  padding: '8px',
-  borderBottom: '1px solid #dee2e6',
-  textAlign: 'left'
-};

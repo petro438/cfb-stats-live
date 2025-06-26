@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     const countResult = await client.query('SELECT COUNT(*) as count FROM team_power_ratings');
     console.log('Total power ratings:', countResult.rows[0].count);
 
-    // Try the main query
+    // Try the main query - without percentile columns since they don't exist
     console.log('Executing main query...');
     const query = `
       SELECT 
@@ -64,10 +64,6 @@ export default async function handler(req, res) {
         pr.offense_rating, 
         pr.defense_rating,
         pr.strength_of_schedule,
-        pr.power_percentile,
-        pr.offense_percentile,
-        pr.defense_percentile,
-        pr.sos_percentile,
         ${hasTeams ? `
         t.school,
         t.conference,
@@ -94,8 +90,21 @@ export default async function handler(req, res) {
       console.log('Sample row:', result.rows[0]);
     }
     
-    // Transform data
-    console.log('Transforming data...');
+    // Transform data - calculate percentiles on the fly
+    console.log('Transforming data and calculating percentiles...');
+    
+    // Calculate percentiles for each rating type
+    const powerRatings = result.rows.map(r => parseFloat(r.power_rating)).filter(r => !isNaN(r)).sort((a, b) => b - a);
+    const offenseRatings = result.rows.map(r => parseFloat(r.offense_rating)).filter(r => !isNaN(r)).sort((a, b) => b - a);
+    const defenseRatings = result.rows.map(r => parseFloat(r.defense_rating)).filter(r => !isNaN(r)).sort((a, b) => b - a);
+    const sosRatings = result.rows.map(r => parseFloat(r.strength_of_schedule)).filter(r => !isNaN(r)).sort((a, b) => b - a);
+    
+    const getPercentile = (value, sortedArray) => {
+      if (!value || isNaN(value)) return 50;
+      const rank = sortedArray.findIndex(v => v <= value) + 1;
+      return Math.round((rank / sortedArray.length) * 100);
+    };
+    
     const teams = result.rows.map((team, index) => ({
       rank: index + 1,
       team_name: team.team_name,
@@ -106,10 +115,10 @@ export default async function handler(req, res) {
       offense_rating: parseFloat(team.offense_rating) || 0,
       defense_rating: parseFloat(team.defense_rating) || 0,
       strength_of_schedule: parseFloat(team.strength_of_schedule) || 0,
-      power_percentile: parseFloat(team.power_percentile) || 50,
-      offense_percentile: parseFloat(team.offense_percentile) || 50,
-      defense_percentile: parseFloat(team.defense_percentile) || 50,
-      sos_percentile: parseFloat(team.sos_percentile) || 50
+      power_percentile: getPercentile(parseFloat(team.power_rating), powerRatings),
+      offense_percentile: getPercentile(parseFloat(team.offense_rating), offenseRatings),
+      defense_percentile: getPercentile(parseFloat(team.defense_rating), defenseRatings),
+      sos_percentile: getPercentile(parseFloat(team.strength_of_schedule), sosRatings)
     }));
 
     console.log(`✅ Transformed ${teams.length} teams successfully`);

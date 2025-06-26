@@ -12,9 +12,10 @@ export default async function handler(req, res) {
 
   try {
     await client.connect();
-
+    
+    // Fixed query - removed DISTINCT ON and ROW_NUMBER conflicts
     const query = `
-      SELECT DISTINCT ON (pr.team_name)
+      SELECT 
         pr.team_name,
         pr.power_rating,
         pr.offense_rating, 
@@ -26,17 +27,17 @@ export default async function handler(req, res) {
         pr.sos_percentile,
         t.school,
         t.conference,
-        t.logo_url,
-        ROW_NUMBER() OVER (ORDER BY pr.power_rating DESC) as rank
+        t.logo_url
       FROM team_power_ratings pr
       LEFT JOIN teams t ON LOWER(TRIM(pr.team_name)) = LOWER(TRIM(t.school))
       WHERE pr.power_rating IS NOT NULL
-      ORDER BY pr.team_name, pr.power_rating DESC
+      ORDER BY pr.power_rating DESC
       LIMIT 150;
     `;
-
+    
     const result = await client.query(query);
     
+    // Transform data to match frontend expectations
     const teams = result.rows.map((team, index) => ({
       rank: index + 1,
       team_name: team.team_name,
@@ -53,11 +54,15 @@ export default async function handler(req, res) {
       sos_percentile: parseFloat(team.sos_percentile) || 50
     }));
 
+    console.log(`API: Returning ${teams.length} teams`);
     res.status(200).json(teams);
-
+    
   } catch (error) {
     console.error('Database error:', error);
-    res.status(500).json({ error: 'Database query failed', details: error.message });
+    res.status(500).json({ 
+      error: 'Database query failed', 
+      details: error.message 
+    });
   } finally {
     await client.end();
   }

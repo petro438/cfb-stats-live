@@ -9,7 +9,7 @@ Passing Stats Dashboard - Comprehensive passing analytics with offense/defense v
 
 Basic & Advanced modes
 Season totals vs per-game averages
-FBS teams only with proper defensive perspective 
+FBS teams only with proper defensive perspective  
 
 
 

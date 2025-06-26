@@ -1,38 +1,50 @@
-.App {
-  text-align: center;
+/* CFB Analytics Global Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  font-family: 'Trebuchet MS', sans-serif;
+  background-color: #ffffff;
+  color: #212529;
+  line-height: 1.2;
+  margin: 0;
+  padding: 8px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+th {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-.App-link {
-  color: #61dafb;
+td {
+  padding: 8px;
+  border-bottom: 1px solid #dee2e6;
+  text-align: left;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+h1 {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-weight: bold;
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #212529;
 }
